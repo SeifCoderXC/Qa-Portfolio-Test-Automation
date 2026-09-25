@@ -92,7 +92,13 @@ function extractInPage(): Raw {
     .slice(0, 200)
     .map((a) => ({ text: clean(a.innerText || a.getAttribute("aria-label")), href: a.href }));
 
-  return { title: clean(document.title), forms, buttons, inputs, links };
+  const headings = Array.from(document.querySelectorAll("h1, h2"))
+    .filter(visible)
+    .slice(0, 10)
+    .map((h) => clean((h as HTMLElement).innerText))
+    .filter(Boolean);
+
+  return { title: clean(document.title), headings, forms, buttons, inputs, links };
 }
 
 export async function extractPage(

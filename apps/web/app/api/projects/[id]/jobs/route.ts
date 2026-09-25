@@ -1,27 +1,28 @@
 import { eq, getDb, jobs, projects } from "@ai-qa/db";
 import { error, json, readJson } from "@/lib/http";
 
-const ALLOWED_TYPES = ["discover"] as const;
+const ALLOWED_TYPES = ["discover", "plan"] as const;
+type AllowedType = (typeof ALLOWED_TYPES)[number];
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const read = await readJson(req);
   if (!read.ok) return error(400, "invalid JSON body");
 
-  const type = (read.body as { type?: unknown } | null)?.type;
-  if (!ALLOWED_TYPES.includes(type as (typeof ALLOWED_TYPES)[number])) {
+  const body = (read.body ?? {}) as { type?: unknown; heuristic?: unknown };
+  if (!ALLOWED_TYPES.includes(body.type as AllowedType)) {
     return error(400, "validation failed", { type: `must be one of: ${ALLOWED_TYPES.join(", ")}` });
   }
+  const type = body.type as AllowedType;
 
   const db = getDb();
   const project = db.select({ id: projects.id }).from(projects).where(eq(projects.id, id)).get();
   if (!project) return error(404, "project not found");
 
-  const job = db
-    .insert(jobs)
-    .values({ type: "discover", payloadJson: { projectId: id } })
-    .returning()
-    .get();
-
+  const payload =
+    type === "plan" && body.heuristic === true
+      ? { projectId: id, heuristic: true }
+      : { projectId: id };
+  const job = db.insert(jobs).values({ type, payloadJson: payload }).returning().get();
   return json(job, 201);
 }

@@ -1,0 +1,1 @@
+ALTER TABLE `test_plans` ADD `source` text DEFAULT 'heuristic' NOT NULL;

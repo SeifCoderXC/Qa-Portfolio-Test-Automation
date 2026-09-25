@@ -15,6 +15,13 @@
       "when": 1790361386452,
       "tag": "0001_demonic_starjammers",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790364444063,
+      "tag": "0002_flawless_menace",
+      "breakpoints": true
     }
   ]
 }

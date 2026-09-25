@@ -55,6 +55,8 @@ export const testPlans = sqliteTable(
     status: text("status", { enum: ["draft", "approved"] })
       .notNull()
       .default("draft"),
+    /** "ai:<model>" or "heuristic". */
+    source: text("source").notNull().default("heuristic"),
     createdAt: createdAt(),
   },
   (t) => [index("test_plans_project_idx").on(t.projectId)],

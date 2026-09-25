@@ -9,6 +9,8 @@ export type Field = {
 export type AppPage = {
   url: string;
   title: string;
+  /** Visible h1/h2 text, useful for checkable expectations. */
+  headings: string[];
   forms: { selector: string; fields: Field[] }[];
   buttons: { text: string; selector: string }[];
   /** Inputs that are not inside a <form>. */
@@ -24,3 +26,15 @@ export type AppMap = {
 };
 
 export type Credentials = { email: string; password: string };
+
+export type Severity = "low" | "medium" | "high" | "critical";
+
+export type PlannedCase = {
+  key: string;
+  title: string;
+  objective: string;
+  preconditions: string;
+  steps: string[];
+  expected: string;
+  severity: Severity;
+};
