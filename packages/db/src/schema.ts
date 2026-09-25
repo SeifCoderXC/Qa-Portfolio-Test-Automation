@@ -11,6 +11,9 @@ const createdAt = () =>
     .notNull()
     .default(sql`(unixepoch('subsec') * 1000)`);
 
+export const FAILURE_CLASSES = ["product_bug", "test_bug", "env", "flake", "unknown"] as const;
+export type FailureClass = (typeof FAILURE_CLASSES)[number];
+
 export const projects = sqliteTable("projects", {
   id: id(),
   name: text("name").notNull(),
@@ -117,6 +120,8 @@ export const results = sqliteTable(
     status: text("status", { enum: ["passed", "failed", "blocked", "skipped", "error"] }).notNull(),
     durationMs: integer("duration_ms"),
     errorText: text("error_text"),
+    classification: text("classification", { enum: FAILURE_CLASSES }),
+    analysis: text("analysis"),
   },
   (t) => [index("results_run_idx").on(t.runId)],
 );
@@ -128,7 +133,7 @@ export const evidence = sqliteTable(
     resultId: text("result_id")
       .notNull()
       .references(() => results.id, { onDelete: "cascade" }),
-    kind: text("kind", { enum: ["png", "webm", "console", "network"] }).notNull(),
+    kind: text("kind", { enum: ["png", "webm", "console", "network", "page"] }).notNull(),
     path: text("path").notNull(),
     createdAt: createdAt(),
   },
@@ -148,6 +153,11 @@ export const bugs = sqliteTable(
       .notNull()
       .default("medium"),
     analysis: text("analysis"),
+    classification: text("classification", { enum: FAILURE_CLASSES })
+      .notNull()
+      .default("product_bug"),
+    // Set by the app: SQLite cannot ALTER-add a column with an expression default.
+    createdAt: integer("created_at", { mode: "timestamp_ms" }).$defaultFn(() => new Date()),
     status: text("status", { enum: ["open", "pushed", "ignored"] })
       .notNull()
       .default("open"),

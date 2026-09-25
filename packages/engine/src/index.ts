@@ -14,3 +14,11 @@ export {
   type EvidenceKind,
   type RunCaseOptions,
 } from "./run";
+export {
+  aiClassify,
+  heuristicClassify,
+  DEFAULT_ANALYZE_MODEL,
+  type Classification,
+  type FailureClass,
+  type FailureInput,
+} from "./analyze";

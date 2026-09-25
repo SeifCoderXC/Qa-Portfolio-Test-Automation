@@ -6,7 +6,7 @@ import { parseStep, quotedTexts, type Step } from "./steps";
 import type { Credentials, PlannedCase } from "./types";
 
 export type CaseStatus = "passed" | "failed" | "blocked" | "error";
-export type EvidenceKind = "png" | "webm" | "console" | "network";
+export type EvidenceKind = "png" | "webm" | "console" | "network" | "page";
 
 export type CaseResult = {
   status: CaseStatus;
@@ -241,6 +241,17 @@ export async function runCase(browser: Browser, opts: RunCaseOptions): Promise<C
       () => false,
     );
     if (ok) evidence.push({ kind: "png", path: `${testCase.key}/${name}` });
+  }
+
+  if (status !== "passed") {
+    // What the page actually showed: lets the analyzer tell a wrong test from a wrong app.
+    const text = await page
+      .locator("body")
+      .innerText({ timeout: 2000 })
+      .catch(() => "");
+    const excerpt = `url: ${page.url()}\ntitle: ${await page.title().catch(() => "")}\n\n${text.slice(0, 3000)}`;
+    writeFileSync(join(caseDir, "page.txt"), excerpt);
+    evidence.push({ kind: "page", path: `${testCase.key}/page.txt` });
   }
 
   const video = page.video();
