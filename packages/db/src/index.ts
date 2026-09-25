@@ -1,2 +1,3 @@
-// Placeholder. SQLite + Drizzle arrives in slice 02.
-export {};
+export * from "./schema";
+export { getDb, type Db } from "./client";
+export { encrypt, decrypt } from "./crypto";

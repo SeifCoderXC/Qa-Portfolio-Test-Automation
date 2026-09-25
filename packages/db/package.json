@@ -6,9 +6,20 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
+    "db:generate": "node node_modules/drizzle-kit/bin.cjs generate",
+    "db:migrate": "node --env-file-if-exists=../../.env --import tsx scripts/migrate.ts",
+    "db:seed": "node --env-file-if-exists=../../.env --import tsx scripts/seed.ts",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/node": "^22.0.0",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "drizzle-orm": "^0.45.3"
   }
 }

@@ -9,7 +9,10 @@
     "dev": "pnpm --filter web dev",
     "worker": "pnpm --filter @ai-qa/worker start",
     "lint": "pnpm -r --if-present lint",
-    "format": "node node_modules/prettier/bin/prettier.cjs --write ."
+    "format": "node node_modules/prettier/bin/prettier.cjs --write .",
+    "db:generate": "pnpm --filter @ai-qa/db db:generate",
+    "db:migrate": "pnpm --filter @ai-qa/db db:migrate",
+    "db:seed": "pnpm --filter @ai-qa/db db:seed"
   },
   "devDependencies": {
     "prettier": "^3.3.3",
