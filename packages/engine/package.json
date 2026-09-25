@@ -6,7 +6,9 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
-    "typecheck": "node node_modules/typescript/bin/tsc --noEmit"
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "test": "node --import tsx --test test/*.test.ts",
+    "browser:install": "node node_modules/playwright/cli.js install chromium"
   },
   "devDependencies": {
     "@types/node": "^22.20.4",

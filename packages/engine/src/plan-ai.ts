@@ -4,8 +4,8 @@ import { z } from "zod";
 import { parseStep, STEP_GRAMMAR } from "./steps";
 import type { AppMap, PlannedCase } from "./types";
 
-export const MAX_MAP_CHARS = 20_000;
-export const DEFAULT_PLAN_MODEL = "claude-haiku-4-5";
+const MAX_MAP_CHARS = 20_000;
+const DEFAULT_PLAN_MODEL = "claude-haiku-4-5";
 
 const SYSTEM = `You are a QA test designer. Given an application map, produce 8 to 25
 test cases. Prefer smoke and negative auth/forms. JSON only:
@@ -31,7 +31,7 @@ const CaseSchema = z.object({
 });
 const PlanSchema = z.object({ cases: z.array(CaseSchema) });
 
-export function truncateMap(map: AppMap): string {
+function truncateMap(map: AppMap): string {
   const json = JSON.stringify(map);
   return json.length <= MAX_MAP_CHARS ? json : json.slice(0, MAX_MAP_CHARS) + "…(truncated)";
 }

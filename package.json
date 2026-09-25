@@ -13,7 +13,11 @@
     "db:generate": "pnpm --filter @ai-qa/db db:generate",
     "db:migrate": "pnpm --filter @ai-qa/db db:migrate",
     "db:seed": "pnpm --filter @ai-qa/db db:seed",
-    "enqueue": "pnpm --filter @ai-qa/worker enqueue"
+    "enqueue": "pnpm --filter @ai-qa/worker enqueue",
+    "demo": "pnpm db:migrate && pnpm --filter @ai-qa/worker demo",
+    "test": "pnpm --filter @ai-qa/engine test",
+    "typecheck": "pnpm -r typecheck",
+    "browser:install": "pnpm --filter @ai-qa/engine browser:install"
   },
   "devDependencies": {
     "prettier": "^3.3.3",

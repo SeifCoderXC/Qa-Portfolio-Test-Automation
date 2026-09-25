@@ -44,10 +44,6 @@ export function jiraConfig(
   };
 }
 
-export async function notConfigured(): Promise<boolean> {
-  return jiraConfig() === null;
-}
-
 // --- Atlassian Document Format ------------------------------------------------
 
 type AdfNode = Record<string, unknown>;

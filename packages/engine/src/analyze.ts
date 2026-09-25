@@ -44,6 +44,15 @@ export function heuristicClassify(f: FailureInput): Classification {
       severity: "low",
     };
 
+  if (/(?:page\.goto|navigation).*Timeout|Timeout.*navigating to/i.test(e))
+    return {
+      ...base,
+      class: "env",
+      title: `${f.caseKey}: page load timed out`,
+      analysis: `The page did not finish loading in time (${short(e, 160)}). Usually a slow network or an overloaded server; retest before filing. If it repeats on a healthy network, it is a performance defect.`,
+      severity: "low",
+    };
+
   if (f.serverErrors.length || /server errors: HTTP 5\d\d/.test(e))
     return {
       ...base,
