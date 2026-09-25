@@ -175,6 +175,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@ai-qa/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      better-sqlite3:
+        specifier: ^13.0.3
+        version: 13.0.3
       next:
         specifier: ^15.5.0
         version: 15.5.26(@types/node@22.20.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)

@@ -2,7 +2,7 @@
 
 An AI QA engineer that tests a web app, proves failures with evidence, and can open a Jira issue.
 
-Status: skeleton + SQLite schema (slices 01–02). No product logic yet.
+Status: skeleton, SQLite schema, project API (slices 01–03).
 
 ## Requirements
 
@@ -27,6 +27,19 @@ pnpm dev      # Next.js dashboard on http://localhost:3000
 pnpm worker   # background worker (currently prints "worker idle")
 pnpm lint     # lint all packages
 ```
+
+## API
+
+```
+POST /api/projects           {name, baseUrl, loginEmail?, loginPassword?}  -> 201 project
+GET  /api/projects                                                          -> project[]
+GET  /api/projects/:id                                                      -> project + secretKinds
+POST /api/projects/:id/jobs  {type: "discover"}                             -> 201 queued job
+```
+
+`baseUrl` must be http(s) without embedded credentials. Login email and password go
+together; both are stored AES-GCM encrypted with `APP_SECRET` and never returned.
+The web app reads the repo-root `.env`.
 
 ## Layout
 
