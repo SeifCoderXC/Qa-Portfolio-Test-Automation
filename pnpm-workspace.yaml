@@ -1,0 +1,11 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true
+
+# eslint-config-next resolves its plugins from the app dir
+publicHoistPattern:
+  - "*eslint*"
