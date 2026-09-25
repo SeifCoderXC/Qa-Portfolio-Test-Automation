@@ -1,5 +1,6 @@
 import { eq, getDb, jobs, projects } from "@ai-qa/db";
 import { error, json, readJson } from "@/lib/http";
+import { recentJobs } from "@/lib/queries";
 import { enqueueRun } from "@/lib/runs";
 
 const ALLOWED_TYPES = ["discover", "plan", "run"] as const;
@@ -31,4 +32,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       : { projectId: id };
   const job = db.insert(jobs).values({ type, payloadJson: payload }).returning().get();
   return json(job, 201);
+}
+
+/** Recent jobs touching this project, for progress display. */
+export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return json(recentJobs(id));
 }

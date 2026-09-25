@@ -7,13 +7,13 @@ type Run = typeof runs.$inferSelect;
 /** Create a queued run for the latest plan and the job that executes it. */
 export function enqueueRun(
   projectId: string,
-  opts: { type?: "run" | "retest"; caseIds?: string[] } = {},
+  opts: { type?: "run" | "retest"; caseIds?: string[]; planId?: string } = {},
 ): { ok: true; job: Job; run: Run } | { ok: false; error: string } {
-  const plan = latestPlan(projectId);
-  if (!plan) return { ok: false, error: "no plan yet; generate a plan first" };
+  const planId = opts.planId ?? latestPlan(projectId)?.id;
+  if (!planId) return { ok: false, error: "no plan yet; generate a plan first" };
   const db: Db = getDb();
   return db.transaction((tx) => {
-    const run = tx.insert(runs).values({ projectId, planId: plan.id }).returning().get();
+    const run = tx.insert(runs).values({ projectId, planId }).returning().get();
     const payload = opts.caseIds?.length
       ? { runId: run.id, caseIds: opts.caseIds }
       : { runId: run.id };
