@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-qa/db": "workspace:*",
+    "@ai-qa/integrations": "workspace:*",
     "better-sqlite3": "^13.0.3",
     "next": "^15.5.0",
     "react": "^19.0.0",

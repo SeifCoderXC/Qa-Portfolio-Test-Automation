@@ -8,7 +8,7 @@ const rootEnv = resolve(process.cwd(), "../../.env");
 if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@ai-qa/db"],
+  transpilePackages: ["@ai-qa/db", "@ai-qa/integrations"],
   // Native module: must be required at runtime, not bundled.
   serverExternalPackages: ["better-sqlite3"],
 };

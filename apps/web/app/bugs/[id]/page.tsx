@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BugActions } from "@/components/bug-actions";
 import { Badge, Card, SectionTitle } from "@/components/ui";
-import { jiraConfigured } from "@/lib/jira-env";
+import { jiraConfig } from "@ai-qa/integrations";
 import { bugDetail } from "@/lib/queries";
 
 export default async function BugPage({ params }: { params: Promise<{ id: string }> }) {
@@ -13,6 +13,7 @@ export default async function BugPage({ params }: { params: Promise<{ id: string
   const analysis = (bug.analysis ?? "").split("\n\nEvidence: ")[0];
   const shots = evidence.filter((e) => e.kind === "png");
   const files = evidence.filter((e) => e.kind !== "png");
+  const jiraCfg = jiraConfig();
 
   return (
     <div className="grid grid-cols-1 gap-6">
@@ -42,7 +43,8 @@ export default async function BugPage({ params }: { params: Promise<{ id: string
       <BugActions
         bugId={bug.id}
         jiraKey={bug.jiraKey}
-        jiraReady={jiraConfigured()}
+        jiraUrl={bug.jiraKey && jiraCfg ? `${jiraCfg.baseUrl}/browse/${bug.jiraKey}` : null}
+        jiraReady={jiraCfg !== null}
         canRetest={Boolean(testCase)}
       />
 

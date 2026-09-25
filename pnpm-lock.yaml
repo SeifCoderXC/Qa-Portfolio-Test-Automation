@@ -178,6 +178,9 @@ importers:
       '@ai-qa/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@ai-qa/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3
