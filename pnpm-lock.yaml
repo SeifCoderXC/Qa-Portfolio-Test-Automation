@@ -181,6 +181,9 @@ importers:
       '@ai-qa/integrations':
         specifier: workspace:*
         version: link:../../packages/integrations
+      '@anthropic-ai/sdk':
+        specifier: ^0.128.0
+        version: 0.128.0(zod@4.6.5)
       better-sqlite3:
         specifier: ^13.0.3
         version: 13.0.3

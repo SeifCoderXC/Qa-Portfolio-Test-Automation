@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/", label: "Overview" },
   { href: "/plans", label: "Plans" },
   { href: "/bugs", label: "Bugs" },
+  { href: "/assistant", label: "Assistant" },
 ];
 
 export function Nav({ projects, current }: { projects: P[]; current?: string }) {
