@@ -22,3 +22,8 @@ export function dbPath(): string {
 export function migrationsDir(): string {
   return join(repoRoot(), "packages", "db", "drizzle");
 }
+
+/** Root for screenshots, videos and logs: <repo>/data/evidence. */
+export function evidenceDir(): string {
+  return join(dirname(dbPath()), "evidence");
+}

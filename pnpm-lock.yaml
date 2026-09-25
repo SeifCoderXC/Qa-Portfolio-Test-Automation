@@ -220,6 +220,10 @@ importers:
         version: 5.9.3
 
   apps/worker:
+    dependencies:
+      '@ai-qa/db':
+        specifier: workspace:*
+        version: link:../../packages/db
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

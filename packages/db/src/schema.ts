@@ -152,17 +152,22 @@ export const bugs = sqliteTable(
   (t) => [index("bugs_project_idx").on(t.projectId)],
 );
 
+export const JOB_TYPES = ["ping", "discover", "plan", "run", "analyze", "retest"] as const;
+export type JobType = (typeof JOB_TYPES)[number];
+
 export const jobs = sqliteTable(
   "jobs",
   {
     id: id(),
-    type: text("type", { enum: ["discover", "plan", "run", "analyze", "retest"] }).notNull(),
+    type: text("type", { enum: JOB_TYPES }).notNull(),
     payloadJson: text("payload_json", { mode: "json" }).notNull(),
     status: text("status", { enum: ["queued", "running", "done", "failed"] })
       .notNull()
       .default("queued"),
     createdAt: createdAt(),
     lockedAt: integer("locked_at", { mode: "timestamp_ms" }),
+    finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
+    errorText: text("error_text"),
   },
   (t) => [index("jobs_status_created_idx").on(t.status, t.createdAt)],
 );
