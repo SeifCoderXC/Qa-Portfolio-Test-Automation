@@ -7,3 +7,10 @@ export { discover, type DiscoverOptions, type DiscoverResult } from "./discover"
 export { parseStep, quotedTexts, STEP_GRAMMAR, type Step } from "./steps";
 export { heuristicPlan } from "./plan-heuristic";
 export { aiPlan, truncateMap, DEFAULT_PLAN_MODEL, MAX_MAP_CHARS } from "./plan-ai";
+export {
+  runCase,
+  type CaseResult,
+  type CaseStatus,
+  type EvidenceKind,
+  type RunCaseOptions,
+} from "./run";

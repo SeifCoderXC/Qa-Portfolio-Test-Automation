@@ -96,6 +96,8 @@ export const runs = sqliteTable(
     status: text("status", { enum: ["queued", "running", "passed", "failed", "cancelled"] })
       .notNull()
       .default("queued"),
+    /** Case the worker is executing right now, for the live run view. */
+    currentCaseKey: text("current_case_key"),
     startedAt: integer("started_at", { mode: "timestamp_ms" }),
     finishedAt: integer("finished_at", { mode: "timestamp_ms" }),
   },
@@ -112,7 +114,7 @@ export const results = sqliteTable(
     caseId: text("case_id")
       .notNull()
       .references(() => testCases.id, { onDelete: "cascade" }),
-    status: text("status", { enum: ["passed", "failed", "skipped", "error"] }).notNull(),
+    status: text("status", { enum: ["passed", "failed", "blocked", "skipped", "error"] }).notNull(),
     durationMs: integer("duration_ms"),
     errorText: text("error_text"),
   },

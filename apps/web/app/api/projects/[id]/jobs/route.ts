@@ -1,7 +1,8 @@
 import { eq, getDb, jobs, projects } from "@ai-qa/db";
 import { error, json, readJson } from "@/lib/http";
+import { enqueueRun } from "@/lib/runs";
 
-const ALLOWED_TYPES = ["discover", "plan"] as const;
+const ALLOWED_TYPES = ["discover", "plan", "run"] as const;
 type AllowedType = (typeof ALLOWED_TYPES)[number];
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -18,6 +19,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const db = getDb();
   const project = db.select({ id: projects.id }).from(projects).where(eq(projects.id, id)).get();
   if (!project) return error(404, "project not found");
+
+  if (type === "run") {
+    const res = enqueueRun(id);
+    return res.ok ? json({ ...res.job, runId: res.run.id }, 201) : error(409, res.error);
+  }
 
   const payload =
     type === "plan" && body.heuristic === true
