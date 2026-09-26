@@ -20,6 +20,5 @@ data/
 test-results/
 playwright-report/
 
-# assistant/tooling state
-.claude/
+# local tool state
 **/memory/
