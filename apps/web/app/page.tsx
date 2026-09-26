@@ -15,7 +15,7 @@ export default async function Overview({
       <div className="mx-auto max-w-2xl">
         <h1 className="text-2xl font-semibold">Test a web app</h1>
         <p className="mt-1 mb-6 text-muted">
-          Add the URL. AI QA maps it, writes tests, runs them in Chromium and files proven bugs.
+          Add the URL. AI QA maps it, writes tests, runs them in Chromium, and flags likely bugs.
         </p>
         <Card>
           <NewProjectForm />

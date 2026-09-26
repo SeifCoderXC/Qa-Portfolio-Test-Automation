@@ -1,5 +1,7 @@
 # AI QA
 
+[![CI](https://github.com/SeifCoderXC/Qa-Portfolio-Test-Automation/actions/workflows/ci.yml/badge.svg)](https://github.com/SeifCoderXC/Qa-Portfolio-Test-Automation/actions/workflows/ci.yml)
+
 Local AI-assisted QA console: discover a URL, generate cases, run Playwright, attach evidence,
 optional Jira.
 
@@ -38,7 +40,7 @@ API key everything runs offline on heuristics and rules.
 Requirements: Node 22+, pnpm, Google Chrome or Playwright's Chromium. No API key needed.
 
 ```bash
-git clone <this repo> ai-qa && cd ai-qa
+git clone https://github.com/SeifCoderXC/Qa-Portfolio-Test-Automation.git ai-qa && cd ai-qa
 pnpm install
 cp .env.example .env          # optional, every value may stay empty
 pnpm browser:install          # Playwright Chromium (skip if Google Chrome is installed)
