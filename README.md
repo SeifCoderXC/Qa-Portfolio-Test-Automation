@@ -63,7 +63,37 @@ data/                   ai-qa.sqlite + evidence/{runId}/{caseKey}/…  (gitignor
 Test steps are plain sentences in a tiny grammar (`go to "/login"`, `click "Sign in"`,
 `type "{{loginEmail}}" into "Email"`, `expect text "Welcome"`). The planner writes them, the
 runner executes them, and a step that cannot be bound to the page marks the case **blocked**,
-not failed.
+not failed. The runner waits up to 5 s for client-rendered elements before calling one missing.
+
+Two built-in accessibility checks run on every page with a form:
+
+- `expect form fields have labels`: every field needs a real label (`<label>`, `aria-label`,
+  `aria-labelledby`); a placeholder is not a label (WCAG 2.2 SC 1.3.1, 3.3.2).
+- `expect login fields have autocomplete`: email/password fields must declare `email`,
+  `current-password` or `new-password` (WCAG 2.2 SC 1.3.5; password managers).
+
+### Safety when testing a live app
+
+- Planners write only negative cases for sign-up, contact and reset forms.
+- Any case that submits a form (`click "Create account"`, `press "Enter"` after typing, …) is
+  flagged **submits a form**. _Approve all safe_ skips it, and a run with nothing approved never
+  includes it. A person must tick it after checking it cannot create real accounts, emails or orders.
+- Cases that check nothing are dropped. Hand-written cases (_Add test case_ on the Plans page)
+  are validated against the step grammar and must contain a check.
+
+### Jira workflow
+
+Bugs are filed as QA reports: environment, preconditions, steps to reproduce, expected and
+actual result, severity (label) and a suggested priority, with the screenshot, page text, logs and
+video attached. The Jira project uses a QA defect workflow:
+
+```
+Open → Confirmed → In Progress → Ready for Retest → Closed      (+ Reopened, Rejected)
+```
+
+_Retest_ on a bug page reports back to Jira: a pass while **Ready for Retest** moves the issue to
+**Closed**, a failure while **Ready for Retest** or **Closed** moves it to **Reopened**, and anything
+else only adds a comment. People triage; AI QA verifies.
 
 ## Configuration
 
@@ -106,7 +136,6 @@ It does not:
 - "self-heal" arbitrary UI changes. A step that no longer matches is reported as blocked;
 - handle SSO, MFA or CAPTCHA logins (plain email + password forms only);
 - manage users, permissions or billing. There is no auth wall; run it locally;
-- attach screenshots to Jira (text only in v1; evidence paths are listed);
 - replace a test-management tool.
 
 The step grammar is deliberately small. Anything the planner writes outside it is dropped before

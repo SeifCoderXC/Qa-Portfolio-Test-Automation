@@ -183,7 +183,8 @@ export function bugDetail(bugId: string) {
         .limit(1)
         .get()
     : undefined;
-  return { bug, project, result, testCase, evidence: ev, latest };
+  const run = result ? db.select().from(runs).where(eq(runs.id, result.runId)).get() : undefined;
+  return { bug, project, result, run, testCase, evidence: ev, latest };
 }
 
 export function recentJobs(projectId: string, limit = 8) {

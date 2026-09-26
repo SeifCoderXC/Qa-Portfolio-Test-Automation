@@ -1,11 +1,17 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
+  hasAssertion,
   heuristicClassify,
   heuristicPlan,
+  missingAutocomplete,
   parseStep,
+  unlabeledFields,
+  writesData,
   type AppMap,
   type FailureInput,
+  type Field,
+  type FieldAudit,
 } from "../src/index";
 
 test("parseStep understands the grammar and rejects prose", () => {
@@ -88,6 +94,17 @@ test("heuristicPlan: 8 runnable cases even for a one-page site, auth first when 
   for (const c of cases)
     for (const s of c.steps) assert.ok(parseStep(s), `unparseable step in ${c.key}: ${s}`);
 
+  const f = (over: Partial<Field>): Field => ({
+    name: "",
+    type: "text",
+    label: "",
+    placeholder: "",
+    labelSource: "label",
+    autocomplete: "",
+    selector: "input",
+    required: true,
+    ...over,
+  });
   const login: AppMap = {
     baseUrl: "https://app.test",
     auth: { loginDetected: true, loginUrl: "https://app.test/login" },
@@ -98,15 +115,10 @@ test("heuristicPlan: 8 runnable cases even for a one-page site, auth first when 
         forms: [
           {
             selector: "form",
+            submit: "Sign in",
             fields: [
-              { name: "email", type: "email", label: "Email", selector: "#e", required: true },
-              {
-                name: "password",
-                type: "password",
-                label: "Password",
-                selector: "#p",
-                required: true,
-              },
+              f({ type: "email", label: "Email" }),
+              f({ type: "password", label: "Password" }),
             ],
           },
         ],
@@ -117,4 +129,96 @@ test("heuristicPlan: 8 runnable cases even for a one-page site, auth first when 
   const first = heuristicPlan(login)[0]!;
   assert.equal(first.title, "Login rejects a wrong password");
   assert.equal(first.severity, "critical");
+
+  // Typical sign-up form: placeholder-only fields, two passwords, "Create account".
+  const signup: AppMap = {
+    baseUrl: "https://app.test",
+    auth: { loginDetected: true, loginUrl: "https://app.test/" },
+    pages: [
+      {
+        ...page,
+        url: "https://app.test/",
+        forms: [
+          {
+            selector: "form",
+            submit: "Create account",
+            fields: [
+              f({ type: "email", placeholder: "you@example.com", labelSource: "placeholder-only" }),
+              f({
+                type: "password",
+                placeholder: "Create a password",
+                labelSource: "placeholder-only",
+              }),
+              f({
+                type: "password",
+                placeholder: "Confirm password",
+                labelSource: "placeholder-only",
+              }),
+            ],
+          },
+        ],
+      },
+    ],
+  };
+  const plan = heuristicPlan(signup);
+  const titles = plan.map((c) => c.title);
+  assert.ok(titles.includes("Sign-up rejects mismatched passwords"));
+  assert.ok(
+    !titles.some((t) => /stored credentials|wrong password/.test(t)),
+    "no login cases on a sign-up form",
+  );
+  assert.ok(titles.includes("Form fields on / have real labels"));
+  assert.ok(titles.includes("Login fields on / support autofill"));
+  const mismatch = plan.find((c) => c.title === "Sign-up rejects mismatched passwords")!;
+  assert.ok(
+    mismatch.steps.includes('type "Mismatch-A-12345" into "Create a password"'),
+    "finds fields by placeholder",
+  );
+  for (const c of plan)
+    for (const s of c.steps) assert.ok(parseStep(s), `unparseable step in ${c.key}: ${s}`);
+});
+
+test("a11y audit: placeholder is not a label; email/password need autocomplete", () => {
+  const audit = (o: Partial<FieldAudit>): FieldAudit => ({
+    type: "text",
+    name: "",
+    placeholder: "",
+    label: "",
+    labelSource: "label",
+    autocomplete: "",
+    ...o,
+  });
+  const signupFields = [
+    audit({ type: "email", placeholder: "you@example.com", labelSource: "placeholder-only" }),
+    audit({ type: "password", placeholder: "Confirm password", labelSource: "placeholder-only" }),
+  ];
+  assert.equal(unlabeledFields(signupFields).length, 2);
+  assert.equal(missingAutocomplete(signupFields).length, 2);
+  const good = [
+    audit({ type: "email", label: "Email", autocomplete: "email" }),
+    audit({ type: "password", label: "Password", autocomplete: "current-password" }),
+  ];
+  assert.deepEqual(unlabeledFields(good), []);
+  assert.deepEqual(missingAutocomplete(good), []);
+  assert.deepEqual(parseStep("expect form fields have labels"), { kind: "expectFieldsLabelled" });
+  assert.deepEqual(parseStep("expect login fields have autocomplete"), {
+    kind: "expectLoginAutocomplete",
+  });
+});
+
+test("safety: form submissions are flagged; cases must check something", () => {
+  assert.equal(writesData(['go to "/"', 'expect text "Hi"']), null);
+  assert.match(
+    writesData(['type "a@b.co" into "Email"', 'click "Create account"'])!,
+    /Create account/,
+  );
+  assert.match(writesData(['type "x" into "Search"', 'press "Enter"'])!, /Enter/);
+  assert.equal(
+    writesData(['click "Log in"']),
+    null,
+    "switching a tab or logging in writes nothing",
+  );
+  assert.equal(hasAssertion(['go to "/"'], "Page loads"), false);
+  assert.equal(hasAssertion(['go to "/"'], 'Shows "Welcome"'), true);
+  assert.equal(hasAssertion(['go to "/"', "expect no server errors"], ""), true);
 });

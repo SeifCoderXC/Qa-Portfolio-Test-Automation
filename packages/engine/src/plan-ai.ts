@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
+import { hasAssertion } from "./safety";
 import { parseStep, STEP_GRAMMAR } from "./steps";
 import type { AppMap, PlannedCase } from "./types";
 
@@ -17,6 +18,13 @@ severity is one of low, medium, high, critical.
 Only use URLs, link texts, button texts, field labels and headings that appear in the map.
 Put exact visible text you expect in double quotes inside "expected".
 Never put real passwords in steps; use {{loginEmail}} and {{loginPassword}}.
+Every case must check something: at least one "expect ..." step.
+Placeholders are not visible text: never "expect text" a placeholder. Fields whose labelSource is
+"placeholder-only" or "none" have no real label; cover them with "expect form fields have labels".
+For email/password fields also add "expect login fields have autocomplete".
+Safety: this may run against production. Never write a case that could create a real account,
+send an email or message, place an order or delete data. For sign-up, contact and reset forms only
+write negative cases that the app must reject (mismatched passwords, invalid email, too short).
 
 ${STEP_GRAMMAR}`;
 
@@ -36,7 +44,12 @@ function truncateMap(map: AppMap): string {
   return json.length <= MAX_MAP_CHARS ? json : json.slice(0, MAX_MAP_CHARS) + "…(truncated)";
 }
 
-export type AiPlanResult = { cases: PlannedCase[]; model: string; droppedSteps: number };
+export type AiPlanResult = {
+  cases: PlannedCase[];
+  model: string;
+  droppedSteps: number;
+  droppedWeak: number;
+};
 
 export async function aiPlan(
   map: AppMap,
@@ -55,16 +68,22 @@ export async function aiPlan(
   const parsed = res.parsed_output;
   if (!parsed?.cases.length) throw new Error("model returned no cases");
 
-  // Keep only steps the runner understands; drop cases left with none.
+  // Keep only steps the runner understands; drop cases that end up checking nothing.
   let droppedSteps = 0;
+  let droppedWeak = 0;
   const cases = parsed.cases
     .slice(0, 25)
-    .map((c, i) => {
+    .map((c) => {
       const steps = c.steps.slice(0, 8).filter((s) => parseStep(s) !== null);
       droppedSteps += Math.min(c.steps.length, 8) - steps.length;
-      return { ...c, key: `TC-${String(i + 1).padStart(3, "0")}`, steps };
+      return { ...c, steps };
     })
-    .filter((c) => c.steps.length > 0);
+    .filter((c) => {
+      const ok = c.steps.length > 0 && hasAssertion(c.steps, c.expected);
+      if (!ok) droppedWeak++;
+      return ok;
+    })
+    .map((c, i) => ({ ...c, key: `TC-${String(i + 1).padStart(3, "0")}` }));
   if (!cases.length) throw new Error("no case had runnable steps");
-  return { cases, model, droppedSteps };
+  return { cases, model, droppedSteps, droppedWeak };
 }

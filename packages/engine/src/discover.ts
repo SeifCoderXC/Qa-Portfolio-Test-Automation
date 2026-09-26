@@ -49,6 +49,7 @@ export async function discover(opts: DiscoverOptions): Promise<DiscoverResult> {
       const { url, depth } = queue.shift()!;
       try {
         const res = await page.goto(url, { timeout: pageTimeoutMs, waitUntil: "load" });
+        await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
         if (page.url().startsWith("chrome-error://"))
           throw new Error(`navigation failed for ${url}`);
         if (res && res.status() >= 400) errors.push(`${url} -> HTTP ${res.status()}`);

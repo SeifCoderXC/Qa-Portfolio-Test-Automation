@@ -1,8 +1,11 @@
-import { and, eq, getDb, inArray, testCases, testPlans } from "@ai-qa/db";
+import { and, eq, getDb, inArray, isNull, testCases, testPlans } from "@ai-qa/db";
 import { error, json, readJson } from "@/lib/http";
 import { casesOf, latestPlan } from "@/lib/plans";
 
-/** Body: {ids: string[] | "all", approved?: boolean}. Applies to the latest plan only. */
+/**
+ * Body: {ids: string[] | "all", approved?: boolean}. Applies to the latest plan only.
+ * "all" never approves cases that may write data (risk set); those need their id listed.
+ */
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const read = await readJson(req);
@@ -26,7 +29,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const db = getDb();
   const where = all
-    ? eq(testCases.planId, plan.id)
+    ? approved
+      ? and(eq(testCases.planId, plan.id), isNull(testCases.risk))
+      : eq(testCases.planId, plan.id)
     : and(eq(testCases.planId, plan.id), inArray(testCases.id, ids!.length ? ids! : [""]));
   const changed = db.update(testCases).set({ approved }).where(where).run().changes;
 

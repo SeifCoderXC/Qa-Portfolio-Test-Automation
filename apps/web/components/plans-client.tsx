@@ -13,6 +13,8 @@ type TestCase = {
   expected: string | null;
   severity: string;
   approved: boolean;
+  /** Set when the case may write data (e.g. submits a sign-up form). */
+  risk: string | null;
 };
 type Plan = { id: string; status: string; source: string; createdAt: string };
 type Job = {
@@ -178,7 +180,7 @@ export function PlansClient({
                   className="whitespace-nowrap text-accent hover:underline"
                   onClick={() => approve("all", true)}
                 >
-                  Approve all
+                  Approve all safe
                 </button>
                 <button
                   className="text-muted hover:underline"
@@ -219,10 +221,24 @@ export function PlansClient({
                   >
                     {c.title}
                   </button>
+                  {c.risk && (
+                    <span
+                      className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-medium whitespace-nowrap text-amber-700 dark:text-amber-300"
+                      title={`May write data: ${c.risk}. Approve only if it cannot create real accounts, emails or orders.`}
+                    >
+                      submits a form
+                    </span>
+                  )}
                   <Badge value={c.severity} />
                 </div>
                 {open === c.id && (
                   <div className="mt-3 ml-7 grid gap-2 rounded-lg bg-bg p-3 text-sm">
+                    {c.risk && (
+                      <p className="text-amber-700 dark:text-amber-300">
+                        May write data ({c.risk}). &quot;Approve all safe&quot; skips it; tick it
+                        yourself only if it cannot create real accounts, emails or orders.
+                      </p>
+                    )}
                     {c.objective && <p className="text-muted">{c.objective}</p>}
                     <ol className="list-decimal pl-5 font-mono text-xs">
                       {c.stepsJson.map((s, i) => (
@@ -242,6 +258,94 @@ export function PlansClient({
           </ul>
         )}
       </Card>
+
+      {plan && <AddCase projectId={project.id} onAdded={load} />}
     </div>
+  );
+}
+
+const field =
+  "w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-accent";
+
+/** Hand-written case: requirements the planners cannot know (e.g. an accessibility rule). */
+function AddCase({ projectId, onAdded }: { projectId: string; onAdded: () => void }) {
+  const [err, setErr] = useState<Record<string, string> | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form)) as Record<string, string>;
+    setBusy(true);
+    setErr(null);
+    const res = await fetch(`/api/projects/${projectId}/cases`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, steps: data.steps!.split("\n") }),
+    });
+    const body = await res.json();
+    setBusy(false);
+    if (!res.ok) return setErr(body.details ?? { error: body.error });
+    form.reset();
+    onAdded();
+  }
+
+  return (
+    <details className="rounded-xl border border-line bg-surface p-5">
+      <summary className="cursor-pointer text-sm font-medium">Add test case</summary>
+      <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+        <label className="grid gap-1.5 sm:col-span-2">
+          Title
+          <input
+            name="title"
+            required
+            className={field}
+            placeholder="Sign-up fields keep a visible label"
+          />
+        </label>
+        <label className="grid gap-1.5 sm:col-span-2">
+          Objective{" "}
+          <span className="text-xs text-muted">
+            why it matters, e.g. a requirement or WCAG rule
+          </span>
+          <input name="objective" className={field} />
+        </label>
+        <label className="grid gap-1.5 sm:col-span-2">
+          Steps <span className="text-xs text-muted">one per line, in the step language</span>
+          <textarea
+            name="steps"
+            required
+            rows={4}
+            className={`${field} font-mono`}
+            placeholder={'go to "/"\nexpect form fields have labels'}
+          />
+        </label>
+        <label className="grid gap-1.5">
+          Expected
+          <input name="expected" className={field} />
+        </label>
+        <label className="grid gap-1.5">
+          Severity
+          <select name="severity" defaultValue="medium" className={field}>
+            <option value="low">low</option>
+            <option value="medium">medium</option>
+            <option value="high">high</option>
+            <option value="critical">critical</option>
+          </select>
+        </label>
+        <div className="flex items-center gap-3 sm:col-span-2">
+          <button type="submit" disabled={busy} className={secondaryButton}>
+            {busy ? "Adding…" : "Add case"}
+          </button>
+          {err && (
+            <p role="alert" className="text-rose-600">
+              {Object.entries(err)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(" · ")}
+            </p>
+          )}
+        </div>
+      </form>
+    </details>
   );
 }

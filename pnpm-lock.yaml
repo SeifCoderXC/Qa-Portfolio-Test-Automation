@@ -178,6 +178,9 @@ importers:
       '@ai-qa/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@ai-qa/engine':
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@ai-qa/integrations':
         specifier: workspace:*
         version: link:../../packages/integrations
@@ -233,6 +236,9 @@ importers:
       '@ai-qa/engine':
         specifier: workspace:*
         version: link:../../packages/engine
+      '@ai-qa/integrations':
+        specifier: workspace:*
+        version: link:../../packages/integrations
     devDependencies:
       '@types/node':
         specifier: ^22.0.0

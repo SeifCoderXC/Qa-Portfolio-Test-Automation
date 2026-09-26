@@ -1,4 +1,4 @@
-import type { AppMap, AppPage, PlannedCase } from "./types";
+import { fieldHandle, type AppMap, type AppPage, type PlannedCase } from "./types";
 
 const pathOf = (url: string) => {
   const u = new URL(url);
@@ -7,7 +7,7 @@ const pathOf = (url: string) => {
 
 /**
  * Offline planner: turns the app map into up to `count` checkable cases.
- * Order = priority: auth, forms, navigation, then per-page smoke checks.
+ * Order = priority: auth, form accessibility, forms, navigation, then per-page smoke checks.
  */
 export function heuristicPlan(map: AppMap, count = 8): PlannedCase[] {
   const out: Omit<PlannedCase, "key">[] = [];
@@ -18,48 +18,99 @@ export function heuristicPlan(map: AppMap, count = 8): PlannedCase[] {
   if (!home) return [];
   const homePath = pathOf(home.url);
 
-  // Auth: a wrong password must not get you past the login page.
-  if (map.auth.loginDetected && map.auth.loginUrl) {
-    const loginPage = map.pages.find((p) => p.url === map.auth.loginUrl) ?? home;
-    const form = loginPage.forms.find((f) => f.fields.some((x) => x.type === "password"));
-    const user = form?.fields.find(
-      (f) => f.type === "email" || /user|email|login/i.test(f.name + f.label),
+  // Auth. Registration forms (two password fields, or a "sign up"-style submit) only get a case
+  // that cannot create an account; login forms get a wrong-password and a stored-login case.
+  const authForms = map.pages.flatMap((page) =>
+    page.forms
+      .filter((f) => f.fields.some((x) => x.type === "password"))
+      .map((form) => ({ page, form })),
+  );
+  for (const { page, form } of authForms) {
+    const user = form.fields.find(
+      (f) => f.type === "email" || /user|email|login/i.test(f.name + fieldHandle(f)),
     );
-    const pass = form?.fields.find((f) => f.type === "password");
+    const passwords = form.fields.filter((f) => f.type === "password");
     const submit =
-      loginPage.buttons.find((b) => /sign|log|submit|continue/i.test(b.text)) ??
-      loginPage.buttons[0];
-    if (user && pass && submit?.text) {
-      const fieldName = (f: typeof user) => f.label || f.name;
+      form.submit ??
+      page.buttons.find((b) => /log ?in|sign ?in|submit|continue/i.test(b.text))?.text;
+    if (!user || !passwords[0] || !submit) continue;
+    const path = pathOf(page.url);
+    const isSignup = passwords.length >= 2 || /sign ?up|create|register|join/i.test(submit);
+    if (isSignup) {
+      if (passwords.length < 2) continue; // no safe negative case without a confirm field
       add({
-        title: "Login rejects a wrong password",
-        objective: "Invalid credentials must not grant access.",
+        title: "Sign-up rejects mismatched passwords",
+        objective:
+          "Registration must not proceed when the confirmation differs. Safe: no account can be created.",
         preconditions: "Logged out.",
         steps: [
-          `go to "${pathOf(loginPage.url)}"`,
-          `type "not-a-user@example.com" into "${fieldName(user)}"`,
-          `type "wrong-password-123" into "${fieldName(pass)}"`,
-          `click "${submit.text}"`,
+          `go to "${path}"`,
+          `type "qa-probe@example.invalid" into "${fieldHandle(user)}"`,
+          `type "Mismatch-A-12345" into "${fieldHandle(passwords[0])}"`,
+          `type "Mismatch-B-67890" into "${fieldHandle(passwords[1]!)}"`,
+          `click "${submit}"`,
           "expect no server errors",
+          `expect url contains "${new URL(page.url).pathname}"`,
         ],
-        expected: "The user stays on the login form and sees an error; no server error.",
-        severity: "critical",
+        expected: "The form shows a mismatch error and stays on the page.",
+        severity: "high",
       });
-      add({
-        title: "Login with stored credentials",
-        objective: "Valid credentials grant access.",
-        preconditions: "Project has a stored login.",
-        steps: [
-          `go to "${pathOf(loginPage.url)}"`,
-          `type "{{loginEmail}}" into "${fieldName(user)}"`,
-          `type "{{loginPassword}}" into "${fieldName(pass)}"`,
-          `click "${submit.text}"`,
-          "expect no server errors",
-        ],
-        expected: "The user is signed in without errors.",
-        severity: "critical",
-      });
+      continue;
     }
+    add({
+      title: "Login rejects a wrong password",
+      objective: "Invalid credentials must not grant access.",
+      preconditions: "Logged out.",
+      steps: [
+        `go to "${path}"`,
+        `type "not-a-user@example.invalid" into "${fieldHandle(user)}"`,
+        `type "wrong-password-123" into "${fieldHandle(passwords[0])}"`,
+        `click "${submit}"`,
+        "expect no server errors",
+      ],
+      expected: "The user stays on the login form and sees an error; no server error.",
+      severity: "critical",
+    });
+    add({
+      title: "Login with stored credentials",
+      objective: "Valid credentials grant access.",
+      preconditions: "Project has a stored login.",
+      steps: [
+        `go to "${path}"`,
+        `type "{{loginEmail}}" into "${fieldHandle(user)}"`,
+        `type "{{loginPassword}}" into "${fieldHandle(passwords[0])}"`,
+        `click "${submit}"`,
+        "expect no server errors",
+      ],
+      expected: "The user is signed in without errors.",
+      severity: "critical",
+    });
+  }
+
+  // Accessibility of forms: every page with fields gets a label check; login-type fields an autofill check.
+  for (const page of map.pages.slice(0, 5)) {
+    const fields = [...page.forms.flatMap((f) => f.fields), ...page.inputs];
+    if (!fields.length) continue;
+    const path = pathOf(page.url);
+    add({
+      title: `Form fields on ${path} have real labels`,
+      objective:
+        "WCAG 2.2 SC 1.3.1 and 3.3.2: every input needs a programmatic label; a placeholder is not a label because it disappears when the user types.",
+      preconditions: "",
+      steps: [`go to "${path}"`, "expect form fields have labels"],
+      expected: "Every visible field has a <label>, aria-label or aria-labelledby.",
+      severity: "medium",
+    });
+    if (fields.some((f) => f.type === "email" || f.type === "password"))
+      add({
+        title: `Login fields on ${path} support autofill`,
+        objective:
+          'WCAG 2.2 SC 1.3.5 Identify Input Purpose; password managers need autocomplete="email" and "current-password"/"new-password".',
+        preconditions: "",
+        steps: [`go to "${path}"`, "expect login fields have autocomplete"],
+        expected: "Email and password fields declare their purpose with autocomplete.",
+        severity: "low",
+      });
   }
 
   // Forms: submitting empty required fields must not crash the server.

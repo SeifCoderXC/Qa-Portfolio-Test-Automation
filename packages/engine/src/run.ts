@@ -1,6 +1,7 @@
 import { mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { Browser, Locator, Page } from "playwright";
+import { auditFieldsInPage, missingAutocomplete, unlabeledFields } from "./a11y";
 import { newContext } from "./browser";
 import { parseStep, quotedTexts, type Step } from "./steps";
 import type { Credentials, PlannedCase } from "./types";
@@ -177,6 +178,26 @@ export async function runCase(browser: Browser, opts: RunCaseOptions): Promise<C
         if (serverErrors.length)
           throw new Failed(`server errors: ${serverErrors.slice(0, 3).join(" | ")}`);
         return;
+      case "expectFieldsLabelled":
+      case "expectLoginAutocomplete": {
+        // Wait for a client-rendered form before auditing it.
+        await page
+          .locator("input, select, textarea")
+          .first()
+          .waitFor({ timeout: 5000 })
+          .catch(() => {});
+        const fields = await page.evaluate(auditFieldsInPage);
+        if (!fields.length) throw new Blocked(`no form fields on the page for step: ${raw}`);
+        const problems =
+          step.kind === "expectFieldsLabelled"
+            ? unlabeledFields(fields)
+            : missingAutocomplete(fields);
+        if (problems.length)
+          throw new Failed(
+            `${step.kind === "expectFieldsLabelled" ? "accessibility: fields without a label" : "accessibility: login fields without autocomplete"}: ${problems.join("; ")}`,
+          );
+        return;
+      }
     }
   }
 

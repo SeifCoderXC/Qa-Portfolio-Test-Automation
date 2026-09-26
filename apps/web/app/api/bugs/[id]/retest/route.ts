@@ -12,6 +12,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     type: "retest",
     caseIds: [detail.testCase.id],
     planId: detail.testCase.planId,
+    bugId: detail.bug.id,
   });
   return res.ok ? json({ ...res.job, runId: res.run.id }, 201) : error(409, res.error);
 }

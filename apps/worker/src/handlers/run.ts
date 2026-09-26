@@ -38,7 +38,7 @@ export async function executeRun(runId: string, caseIds?: string[]): Promise<voi
     ? planCases.filter((c) => caseIds.includes(c.id))
     : planCases.some((c) => c.approved)
       ? planCases.filter((c) => c.approved)
-      : planCases; // none approved: run all
+      : planCases.filter((c) => !c.risk); // none approved: run everything that cannot write data
   if (!cases.length) throw new Error("no cases to run");
 
   db.update(runs).set({ status: "running", startedAt: new Date() }).where(eq(runs.id, runId)).run();

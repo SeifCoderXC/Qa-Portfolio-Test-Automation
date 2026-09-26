@@ -94,6 +94,15 @@ export function heuristicClassify(f: FailureInput): Classification {
       analysis: `The page did not show what the case expects. ${short(e, 200)}. Expected: ${short(f.expected.replace(/\.+$/, ""), 200)}. Confirm the requirement: if the expectation is right, this is a product defect.`,
     };
 
+  if (/^accessibility:/.test(e))
+    return {
+      ...base,
+      class: "product_bug",
+      title: `${f.caseKey}: ${/autocomplete/.test(e) ? "login fields lack autocomplete" : "form fields have no real labels"}`,
+      analysis: `${short(e, 300)}. ${/autocomplete/.test(e) ? "WCAG 2.2 SC 1.3.5 (Identify Input Purpose): browsers and password managers cannot recognise these fields." : "WCAG 2.2 SC 1.3.1 / 3.3.2: a placeholder is not a label; it disappears when the user types and is not reliably announced by screen readers."} This is a checked fact about the page, not a flaky test.`,
+      severity: f.severity,
+    };
+
   if (/^console errors:/.test(e))
     return {
       ...base,

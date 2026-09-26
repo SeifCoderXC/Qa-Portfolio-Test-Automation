@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@ai-qa/db": "workspace:*",
-    "@ai-qa/engine": "workspace:*"
+    "@ai-qa/engine": "workspace:*",
+    "@ai-qa/integrations": "workspace:*"
   }
 }

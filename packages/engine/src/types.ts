@@ -1,17 +1,26 @@
 export type Field = {
   name: string;
   type: string;
+  /** Real accessible label (<label>, aria-labelledby, aria-label, title). Empty if none. */
   label: string;
+  placeholder: string;
+  labelSource: "label" | "aria-labelledby" | "aria-label" | "title" | "placeholder-only" | "none";
+  autocomplete: string;
   selector: string;
   required: boolean;
 };
+
+/** Text a test can use to find the field: its label, else placeholder, else name. */
+export const fieldHandle = (f: Pick<Field, "label" | "placeholder" | "name">) =>
+  f.label || f.placeholder || f.name;
 
 export type AppPage = {
   url: string;
   title: string;
   /** Visible h1/h2 text, useful for checkable expectations. */
   headings: string[];
-  forms: { selector: string; fields: Field[] }[];
+  /** `submit` is the text of the form's own submit button, if any. */
+  forms: { selector: string; fields: Field[]; submit?: string }[];
   buttons: { text: string; selector: string }[];
   /** Inputs that are not inside a <form>. */
   inputs: Field[];

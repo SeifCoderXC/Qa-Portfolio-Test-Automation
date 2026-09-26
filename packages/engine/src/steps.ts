@@ -14,6 +14,8 @@ export const STEP_GRAMMAR = `Each step is one line in exactly one of these forms
   expect url contains "<text>"
   expect no console errors
   expect no server errors            (no HTTP 5xx on the page)
+  expect form fields have labels     (every visible field has a real label, not only a placeholder)
+  expect login fields have autocomplete  (email/password fields identify themselves to password managers)
 Values may use {{loginEmail}} and {{loginPassword}} for the stored login.
 Maximum 8 steps per case.`;
 
@@ -28,7 +30,9 @@ export type Step =
   | { kind: "expectTitle"; text: string }
   | { kind: "expectUrl"; text: string }
   | { kind: "expectNoConsoleErrors" }
-  | { kind: "expectNoServerErrors" };
+  | { kind: "expectNoServerErrors" }
+  | { kind: "expectFieldsLabelled" }
+  | { kind: "expectLoginAutocomplete" };
 
 // Accept straight or curly quotes around arguments.
 const Q = `["“”']([^"“”']*)["“”']`;
@@ -86,7 +90,20 @@ const rules: [RegExp, (m: RegExpMatchArray) => Step][] = [
     () => ({ kind: "expectNoConsoleErrors" }),
   ],
   [/^(?:expect|verify|assert)\s+no\s+server\s+errors?$/i, () => ({ kind: "expectNoServerErrors" })],
+  [
+    /^(?:expect|verify|assert)\s+(?:all\s+)?(?:form\s+)?fields\s+(?:have|are)\s+(?:visible\s+)?label(?:s|led)$/i,
+    () => ({ kind: "expectFieldsLabelled" }),
+  ],
+  [
+    /^(?:expect|verify|assert)\s+login\s+fields\s+have\s+autocomplete$/i,
+    () => ({ kind: "expectLoginAutocomplete" }),
+  ],
 ];
+
+/** Steps that check something. A case without one can never fail and proves nothing. */
+export function isAssertion(step: Step): boolean {
+  return step.kind.startsWith("expect");
+}
 
 /** Parse one step, or null if it is not in the grammar (the runner then marks the case blocked). */
 export function parseStep(line: string): Step | null {

@@ -82,6 +82,8 @@ export const testCases = sqliteTable(
       .notNull()
       .default("medium"),
     approved: integer("approved", { mode: "boolean" }).notNull().default(false),
+    /** Why the case may change data (e.g. 'clicks "Create account"'); needs one-by-one approval. */
+    risk: text("risk"),
   },
   (t) => [index("test_cases_plan_idx").on(t.planId)],
 );

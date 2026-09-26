@@ -1,5 +1,5 @@
 import { appMaps, desc, eq, getDb, testCases, testPlans } from "@ai-qa/db";
-import { aiPlan, heuristicPlan, type AppMap, type PlannedCase } from "@ai-qa/engine";
+import { aiPlan, heuristicPlan, writesData, type AppMap, type PlannedCase } from "@ai-qa/engine";
 import { loadProject } from "../project";
 import type { Handler } from "./types";
 
@@ -41,8 +41,11 @@ export const plan: Handler = async (job) => {
         }));
         source += "+heuristic";
       }
-      if (res.droppedSteps)
-        warning = `dropped ${res.droppedSteps} step(s) the runner cannot execute`;
+      const dropped = [
+        res.droppedSteps && `${res.droppedSteps} step(s) the runner cannot execute`,
+        res.droppedWeak && `${res.droppedWeak} case(s) that checked nothing`,
+      ].filter(Boolean);
+      if (dropped.length) warning = `dropped ${dropped.join(" and ")}`;
     } catch (err) {
       // The product must still work offline or when the API misbehaves.
       warning = `AI planner failed, used heuristic plan: ${err instanceof Error ? err.message : String(err)}`;
@@ -71,6 +74,7 @@ export const plan: Handler = async (job) => {
           expected: c.expected,
           severity: c.severity,
           approved: false,
+          risk: writesData(c.steps),
         })),
       )
       .run();

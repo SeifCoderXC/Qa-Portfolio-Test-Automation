@@ -38,12 +38,36 @@ function extractInPage(): Raw {
     return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && s.display !== "none";
   };
 
+  // Kept in sync with a11y.ts (this function is serialized into the page, so no imports).
   function field(el: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement): Field {
-    const labelled = el.labels?.[0]?.innerText;
+    const byLabel = clean(
+      Array.from(el.labels ?? [])
+        .map((l) => l.innerText)
+        .join(" "),
+    );
+    const ids = (el.getAttribute("aria-labelledby") ?? "").split(/\s+/).filter(Boolean);
+    const byIds = clean(ids.map((id) => document.getElementById(id)?.textContent ?? "").join(" "));
+    const byAria = clean(el.getAttribute("aria-label"));
+    const byTitle = clean(el.getAttribute("title"));
+    const placeholder = clean(el.getAttribute("placeholder"));
+    const [label, labelSource]: [string, Field["labelSource"]] = byLabel
+      ? [byLabel, "label"]
+      : byIds
+        ? [byIds, "aria-labelledby"]
+        : byAria
+          ? [byAria, "aria-label"]
+          : byTitle
+            ? [byTitle, "title"]
+            : placeholder
+              ? ["", "placeholder-only"]
+              : ["", "none"];
     return {
       name: el.name || el.id || "",
       type: el instanceof HTMLInputElement ? el.type : el.tagName.toLowerCase(),
-      label: clean(labelled || el.getAttribute("aria-label") || el.getAttribute("placeholder")),
+      label,
+      placeholder,
+      labelSource,
+      autocomplete: (el.getAttribute("autocomplete") ?? "").trim().toLowerCase(),
       selector: selectorFor(el),
       required: el.required,
     };
@@ -65,7 +89,19 @@ function extractInPage(): Raw {
   const forms = Array.from(document.forms)
     .filter(visible)
     .slice(0, 20)
-    .map((f) => ({ selector: selectorFor(f), fields: fieldEls(f).slice(0, 30).map(field) }));
+    .map((f) => {
+      const btn = f.querySelector<HTMLElement>(
+        'button[type="submit"], button:not([type]), input[type="submit"]',
+      );
+      const submit = btn
+        ? clean(btn.innerText || (btn as HTMLInputElement).value || btn.getAttribute("aria-label"))
+        : "";
+      return {
+        selector: selectorFor(f),
+        fields: fieldEls(f).slice(0, 30).map(field),
+        ...(submit && { submit }),
+      };
+    });
 
   const inputs = fieldEls(document)
     .filter((el) => !el.form)
@@ -105,6 +141,8 @@ export async function extractPage(
   page: Page,
   crawlable: (href: string, text: string) => string | null,
 ): Promise<AppPage> {
+  // Client-rendered apps mount forms after "load" (often +300-500 ms); let the page settle.
+  await page.waitForLoadState("networkidle", { timeout: 5000 }).catch(() => {});
   const raw = await page.evaluate(extractInPage);
   const seen = new Set<string>();
   const links: AppPage["links"] = [];
