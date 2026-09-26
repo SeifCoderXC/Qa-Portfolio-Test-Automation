@@ -1,19 +1,46 @@
 # AI QA
 
-An AI QA engineer that tests a web app, proves failures with evidence, and can open a Jira issue.
+Local AI-assisted QA console: discover a URL, generate cases, run Playwright, attach evidence,
+optional Jira.
 
-Give it a URL. It crawls the app, writes test cases, runs them in Chromium, records screenshots,
-video and logs for every failure, decides whether each failure is a product bug, a broken test,
-the environment or a flake, and files the real bugs. It is not "an AI that writes Playwright files".
+You give it a URL. It crawls same-origin pages, proposes test cases, and a person approves them.
+It runs the approved cases in Chromium, keeps a screenshot, video, console and network log for
+every failure, and sorts each failure into product bug, test bug, environment, flake or unknown.
+Only product bugs become bug rows, and a person decides whether to file them in Jira. Without an
+API key everything runs offline on heuristics and rules.
 
-## Try it in 10 minutes
+## Limits
+
+- Chromium only: no Safari, Firefox or mobile devices.
+- Crawls at most 25 pages, depth 3, same origin.
+- Logins: plain email + password forms only. No SSO, MFA or CAPTCHA.
+- Test steps use a small grammar. Steps outside it are dropped; a step that no longer matches the
+  page marks the case **blocked**. There is no "self-healing".
+- The AI classification can be wrong. Every failure keeps its evidence so a person can check it.
+- No login wall: the dashboard binds to 127.0.0.1 and refuses any other Host. Do not expose it.
+- Tested on one real app and example.com, by one person, over a few days.
+
+## What it is not
+
+- Not a hosted SaaS, and not multi-user (no accounts, permissions or billing).
+- Not a replacement for a QA team or a test-management tool.
+- Not autonomous: people approve cases, trigger runs and file bugs.
+- It does not open pull requests, fix code, or check data in your database.
+
+## Who it is for
+
+- A portfolio project showing Playwright, TypeScript, API/SQL tests and CI in one repo.
+- Coursework on test method: plans, cases, expected vs actual, severity, evidence, triage.
+- A local prototype for trying AI-assisted planning and triage on your own staging app.
+
+## Install and try it
 
 Requirements: Node 22+, pnpm, Google Chrome or Playwright's Chromium. No API key needed.
 
 ```bash
 git clone <this repo> ai-qa && cd ai-qa
 pnpm install
-cp .env.example .env          # optional: add ANTHROPIC_API_KEY, JIRA_*, APP_SECRET
+cp .env.example .env          # optional, every value may stay empty
 pnpm browser:install          # Playwright Chromium (skip if Google Chrome is installed)
 pnpm demo                     # example.com: discover -> plan -> run -> analyze
 pnpm dev                      # dashboard: http://localhost:3000
@@ -24,6 +51,19 @@ In a second terminal, keep the worker running so buttons in the dashboard do som
 ```bash
 pnpm worker
 ```
+
+Tests:
+
+```bash
+pnpm test         # unit tests + SQL planted-defect tests
+pnpm test:e2e     # Playwright Test suite for the dashboard
+pnpm test:api     # API tests with Playwright request
+pnpm sql:check    # SQL integrity checks on data/ai-qa.sqlite
+```
+
+Optional settings in `.env` (all empty in `.env.example`): `ANTHROPIC_API_KEY` for AI planning and
+triage, `JIRA_BASE_URL` / `JIRA_EMAIL` / `JIRA_API_TOKEN` / `JIRA_PROJECT_KEY` for Jira, and
+`APP_SECRET` to store a login for the app under test.
 
 `pnpm demo` works offline: it plans with heuristics and classifies failures with rules. Against
 example.com the 8 cases normally all pass. To see failures, evidence and bugs, run it against your
@@ -44,8 +84,8 @@ Then in the dashboard:
 Two processes share one SQLite file. The Next.js app (`apps/web`) is the dashboard and a small
 REST API; it never launches a browser. It only writes rows into a `jobs` table. A long-running
 Node worker (`apps/worker`) polls that table every 2 seconds, locks one job with a guarded
-`UPDATE`, and runs it with `packages/engine`, where Playwright is the hands (crawl, execute
-steps, collect evidence) and Claude is the brain (write test cases, triage failures). Engine
+`UPDATE`, and runs it with `packages/engine`: Playwright crawls, executes steps and collects
+evidence; Claude, when a key is set, writes test cases and triages failures. Engine
 functions are pure: inputs in, data out. The worker persists results. Failures are triaged by
 offline rules first, and by Claude when a key is set, and only `product_bug` becomes a bug row.
 Pushing to Jira is always a user click (`packages/integrations`). Playwright needs a real
@@ -173,22 +213,12 @@ never sent to Claude. Steps refer to them as `{{loginEmail}}` / `{{loginPassword
 | `pnpm db:migrate` / `pnpm db:generate` | Apply / create Drizzle migrations                                             |
 | `pnpm enqueue <type> '<json>'`         | Queue a job by hand, e.g. `pnpm enqueue ping`                                 |
 
-## What this MVP is, honestly
+## Scope
 
-It does: crawl same-origin pages (25 pages, depth 3) with an optional form login, plan 8–25 cases,
-run them in Chromium with a fresh context per case, keep screenshots and video on failure, capture
-console and HTTP 5xx, triage failures into product bug, test bug, env, flake or unknown, dedupe
-open bugs per case, retest, push to Jira, and answer questions about the last run.
-
-It does not:
-
-- run SQL against your database or check data correctness;
-- open GitHub pull requests or fix code;
-- test Safari, Firefox or mobile devices (Chromium only);
-- "self-heal" arbitrary UI changes. A step that no longer matches is reported as blocked;
-- handle SSO, MFA or CAPTCHA logins (plain email + password forms only);
-- manage users, permissions or billing. There is no auth wall: the dashboard binds to 127.0.0.1 and refuses any other Host;
-- replace a test-management tool.
+It crawls same-origin pages with an optional form login, plans 8–25 cases, runs them with a fresh
+browser context per case, keeps screenshots and video on failure, captures console and HTTP 5xx,
+triages failures, dedupes open bugs per case, retests, pushes to Jira on request, and answers
+questions about the last run. See [Limits](#limits) at the top.
 
 The step grammar is deliberately small. Anything the planner writes outside it is dropped before
 the plan is saved, so a plan never contains steps the runner cannot execute.
