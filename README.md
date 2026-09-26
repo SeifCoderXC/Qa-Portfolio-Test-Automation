@@ -95,6 +95,25 @@ _Retest_ on a bug page reports back to Jira: a pass while **Ready for Retest** m
 **Closed**, a failure while **Ready for Retest** or **Closed** moves it to **Reopened**, and anything
 else only adds a comment. People triage; AI QA verifies.
 
+## Dashboard tests (Playwright Test)
+
+Separate from `pnpm demo`: `pnpm demo` makes the **worker** test someone else's app, while this
+suite tests **AI QA's own dashboard** with Playwright Test.
+
+```bash
+pnpm test:e2e       # starts the dashboard if needed, runs tests/e2e, writes playwright-report/
+pnpm test:e2e:ui    # Playwright UI mode
+npx playwright show-report   # or open playwright-report/index.html
+```
+
+- `playwright.config.ts`: Chromium only, `baseURL` http://127.0.0.1:3000, list + HTML reporters,
+  and a `webServer` that migrates and starts the dashboard, or reuses one that is already running.
+- The suite uses its own database (`data/e2e/`), so it never touches your projects.
+- Page objects live in `tests/e2e/pages/` (`HomePage`, `PlansPage`: locators only). `fixtures.ts`
+  gives each test a fresh project, so tests are deterministic.
+- Specs: `smoke` (title, nav, banner, localhost-only), `projects` (create from the form, URL
+  validation), `plans` (empty state, disabled actions), `bugs` (empty state, API 404/400).
+
 ## Configuration
 
 All in the repo-root `.env` (see `.env.example`):
@@ -112,14 +131,15 @@ never sent to Claude. Steps refer to them as `{{loginEmail}}` / `{{loginPassword
 
 ## Commands
 
-| Command                                | What it does                                            |
-| -------------------------------------- | ------------------------------------------------------- |
-| `pnpm dev` / `pnpm worker`             | Dashboard on :3000 / job worker                         |
-| `pnpm demo`                            | Migrate, seed example.com, discover, plan, run, analyze |
-| `pnpm test`                            | Engine unit tests (step grammar, planner, classifier)   |
-| `pnpm lint` / `pnpm typecheck`         | ESLint / TypeScript across the workspace                |
-| `pnpm db:migrate` / `pnpm db:generate` | Apply / create Drizzle migrations                       |
-| `pnpm enqueue <type> '<json>'`         | Queue a job by hand, e.g. `pnpm enqueue ping`           |
+| Command                                | What it does                                                                  |
+| -------------------------------------- | ----------------------------------------------------------------------------- |
+| `pnpm dev` / `pnpm worker`             | Dashboard on :3000 / job worker                                               |
+| `pnpm demo`                            | Migrate, seed example.com, discover, plan, run, analyze                       |
+| `pnpm test`                            | Engine unit tests (step grammar, planner, classifier)                         |
+| `pnpm test:e2e`                        | Playwright Test suite for the dashboard (HTML report in `playwright-report/`) |
+| `pnpm lint` / `pnpm typecheck`         | ESLint / TypeScript across the workspace                                      |
+| `pnpm db:migrate` / `pnpm db:generate` | Apply / create Drizzle migrations                                             |
+| `pnpm enqueue <type> '<json>'`         | Queue a job by hand, e.g. `pnpm enqueue ping`                                 |
 
 ## What this MVP is, honestly
 

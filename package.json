@@ -16,10 +16,14 @@
     "enqueue": "pnpm --filter @ai-qa/worker enqueue",
     "demo": "pnpm db:migrate && pnpm --filter @ai-qa/worker demo",
     "test": "pnpm --filter @ai-qa/engine test",
-    "typecheck": "pnpm -r typecheck",
-    "browser:install": "pnpm --filter @ai-qa/engine browser:install"
+    "typecheck": "pnpm -r typecheck && node node_modules/typescript/bin/tsc -p tests/e2e",
+    "browser:install": "pnpm --filter @ai-qa/engine browser:install",
+    "test:e2e": "node node_modules/@playwright/test/cli.js test",
+    "test:e2e:ui": "node node_modules/@playwright/test/cli.js test --ui"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.20.4",
     "prettier": "^3.3.3",
     "typescript": "^5.6.3"
   }
