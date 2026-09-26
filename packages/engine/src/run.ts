@@ -36,11 +36,20 @@ class Blocked extends Error {}
 /** An expectation that did not hold: the case failed. */
 class Failed extends Error {}
 
-const firstVisible = async (candidates: Locator[]): Promise<Locator | null> => {
-  for (const c of candidates) {
-    const loc = c.first();
-    if ((await loc.count()) > 0 && (await loc.isVisible().catch(() => false))) return loc;
-  }
+/**
+ * First visible match among the candidates, retried until timeoutMs.
+ * Client-rendered apps often mount forms after the load event (about 300–500 ms),
+ * so a single check would mark real elements as missing (blocked).
+ */
+const firstVisible = async (candidates: Locator[], timeoutMs = 5000): Promise<Locator | null> => {
+  const end = Date.now() + timeoutMs;
+  do {
+    for (const c of candidates) {
+      const loc = c.first();
+      if ((await loc.count()) > 0 && (await loc.isVisible().catch(() => false))) return loc;
+    }
+    await new Promise((r) => setTimeout(r, 200));
+  } while (Date.now() < end);
   return null;
 };
 

@@ -71,6 +71,7 @@ export const analyze: Handler = async (job) => {
     const input: FailureInput = {
       caseKey: testCase.caseKey,
       title: testCase.title,
+      objective: testCase.objective ?? undefined,
       steps: testCase.stepsJson as string[],
       expected: testCase.expected ?? "",
       severity: testCase.severity as Severity,

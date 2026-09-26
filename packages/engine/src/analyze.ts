@@ -9,6 +9,8 @@ export const DEFAULT_ANALYZE_MODEL = "claude-sonnet-5";
 export type FailureInput = {
   caseKey: string;
   title: string;
+  /** Why the case exists (e.g. a requirement or standard); tells a real rule from an invented one. */
+  objective?: string;
   steps: string[];
   expected: string;
   severity: Severity;
@@ -125,6 +127,7 @@ Classify the failure:
 - unknown: not enough evidence.
 A failed step is not automatically a product bug. Prefer test_bug when the expectation looks invented or the page never had that element.
 finalPage is what the browser showed when the case stopped; compare it with the expectation.
+case.objective states why the case exists. If it cites a requirement or standard the page violates, that is a product_bug even when the page never had the expected element.
 title: a Jira-style summary under 90 characters. analysis: 2-4 sentences citing the evidence. severity: low, medium, high or critical.`;
 
 export async function aiClassify(
@@ -136,6 +139,7 @@ export async function aiClassify(
     case: {
       key: f.caseKey,
       title: f.title,
+      objective: f.objective ?? "",
       steps: f.steps,
       expected: f.expected,
       severity: f.severity,
