@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { DemoBanner } from "@/components/demo-banner";
 import { Nav } from "@/components/nav";
 import { listProjects } from "@/lib/queries";
 import "./globals.css";
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className="min-h-screen">
+        <DemoBanner />
         <Suspense>
           <Nav projects={projects} current={projects[0]?.id} />
         </Suspense>

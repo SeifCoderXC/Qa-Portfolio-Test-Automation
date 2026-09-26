@@ -135,7 +135,7 @@ It does not:
 - test Safari, Firefox or mobile devices (Chromium only);
 - "self-heal" arbitrary UI changes. A step that no longer matches is reported as blocked;
 - handle SSO, MFA or CAPTCHA logins (plain email + password forms only);
-- manage users, permissions or billing. There is no auth wall; run it locally;
+- manage users, permissions or billing. There is no auth wall: the dashboard binds to 127.0.0.1 and refuses any other Host;
 - replace a test-management tool.
 
 The step grammar is deliberately small. Anything the planner writes outside it is dropped before

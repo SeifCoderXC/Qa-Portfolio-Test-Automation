@@ -2,9 +2,9 @@
   "name": "web",
   "private": true,
   "scripts": {
-    "dev": "node node_modules/next/dist/bin/next dev",
+    "dev": "HOSTNAME=127.0.0.1 node node_modules/next/dist/bin/next dev -H 127.0.0.1",
     "build": "node node_modules/next/dist/bin/next build",
-    "start": "node node_modules/next/dist/bin/next start",
+    "start": "HOSTNAME=127.0.0.1 node node_modules/next/dist/bin/next start -H 127.0.0.1",
     "lint": "node node_modules/eslint/bin/eslint.js .",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit"
   },

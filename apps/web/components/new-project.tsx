@@ -63,6 +63,10 @@ export function NewProjectForm() {
         Login password <span className="text-xs text-muted">optional, stored encrypted</span>
         <input name="loginPassword" type="password" autoComplete="new-password" className={input} />
       </label>
+      <p className="text-xs text-muted sm:col-span-2">
+        http(s) URLs only. Never put a username or password in the URL; use the login fields, which
+        are stored encrypted. Only test apps you own.
+      </p>
       <div className="flex items-center gap-4 sm:col-span-2">
         <button type="submit" disabled={busy} className={primaryButton}>
           {busy ? "Creating…" : "Create project"}
