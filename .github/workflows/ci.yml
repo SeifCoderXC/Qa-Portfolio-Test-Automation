@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: lint · typecheck · unit · API · UI · demo · SQL
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # No ANTHROPIC_API_KEY or JIRA_* secrets on purpose: the offline heuristic paths must keep CI
+    # green, and no job can call Claude or file a Jira issue.
+    env:
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # version comes from "packageManager" in package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests (engine heuristics, SQL checks with planted defects)
+        run: pnpm test
+
+      - name: Install Chromium for Playwright
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: API tests (Playwright request)
+        run: pnpm test:api
+
+      - name: Dashboard tests (Playwright Test)
+        run: pnpm test:e2e
+
+      - name: SQL integrity on the database the test suites wrote
+        run: pnpm sql:check
+        env:
+          DATABASE_PATH: ${{ github.workspace }}/data/e2e/ai-qa.sqlite
+
+      - name: Demo against example.com (discover → heuristic plan → run → analyze)
+        run: pnpm demo
+
+      - name: SQL integrity on the demo database
+        run: pnpm sql:check
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

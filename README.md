@@ -136,6 +136,14 @@ secrets stored encrypted) plus 5 reports. `pnpm sql:check` runs them read-only a
 `data/ai-qa.sqlite` and exits 1 if any check returns rows. Each check is proven to fire by a
 planted-defect test. See [sql/README.md](sql/README.md).
 
+## Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request to `main` (Ubuntu, Node 22, Chromium
+only): install from the lockfile → lint → typecheck → unit tests → API tests → dashboard tests →
+SQL checks → `pnpm demo` on example.com → SQL checks on the demo data. It uses **no secrets**: the
+offline heuristics keep it green, and nothing can call Claude or Jira. On failure the Playwright
+report is uploaded as an artifact.
+
 ## Configuration
 
 All in the repo-root `.env` (see `.env.example`):
