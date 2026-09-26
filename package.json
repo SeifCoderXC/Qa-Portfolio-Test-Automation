@@ -15,12 +15,13 @@
     "db:seed": "pnpm --filter @ai-qa/db db:seed",
     "enqueue": "pnpm --filter @ai-qa/worker enqueue",
     "demo": "pnpm db:migrate && pnpm --filter @ai-qa/worker demo",
-    "test": "pnpm --filter @ai-qa/engine test",
+    "test": "pnpm --filter @ai-qa/engine --filter @ai-qa/db test",
     "typecheck": "pnpm -r typecheck && node node_modules/typescript/bin/tsc -p tests/e2e",
     "browser:install": "pnpm --filter @ai-qa/engine browser:install",
     "test:e2e": "node node_modules/@playwright/test/cli.js test --project=chromium",
     "test:e2e:ui": "node node_modules/@playwright/test/cli.js test --project=chromium --ui",
-    "test:api": "node node_modules/@playwright/test/cli.js test --project=api"
+    "test:api": "node node_modules/@playwright/test/cli.js test --project=api",
+    "sql:check": "pnpm --filter @ai-qa/db sql:check"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

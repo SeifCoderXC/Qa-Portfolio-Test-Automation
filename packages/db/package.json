@@ -9,7 +9,9 @@
     "db:generate": "node node_modules/drizzle-kit/bin.cjs generate",
     "db:migrate": "node --env-file-if-exists=../../.env --import tsx scripts/migrate.ts",
     "db:seed": "node --env-file-if-exists=../../.env --import tsx scripts/seed.ts",
-    "typecheck": "node node_modules/typescript/bin/tsc --noEmit"
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
+    "sql:check": "node --env-file-if-exists=../../.env --import tsx scripts/integrity.ts",
+    "test": "node --import tsx --test test/*.test.ts"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",

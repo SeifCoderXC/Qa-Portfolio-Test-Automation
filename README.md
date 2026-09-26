@@ -129,6 +129,13 @@ The REST API (see [docs/api.md](docs/api.md)) is tested two ways:
 
 Both suites run against the test server's own database and never call Claude or Jira.
 
+## SQL integrity checks
+
+`sql/checks.sql` holds 31 hand-written SQLite checks (orphans, allowed values, business rules,
+secrets stored encrypted) plus 5 reports. `pnpm sql:check` runs them read-only against
+`data/ai-qa.sqlite` and exits 1 if any check returns rows. Each check is proven to fire by a
+planted-defect test. See [sql/README.md](sql/README.md).
+
 ## Configuration
 
 All in the repo-root `.env` (see `.env.example`):
@@ -153,6 +160,7 @@ never sent to Claude. Steps refer to them as `{{loginEmail}}` / `{{loginPassword
 | `pnpm test`                            | Engine unit tests (step grammar, planner, classifier)                         |
 | `pnpm test:e2e`                        | Playwright Test suite for the dashboard (HTML report in `playwright-report/`) |
 | `pnpm test:api`                        | API tests with Playwright `request` (no browser)                              |
+| `pnpm sql:check`                       | Hand-written SQL integrity checks on the database (`sql/checks.sql`)          |
 | `pnpm lint` / `pnpm typecheck`         | ESLint / TypeScript across the workspace                                      |
 | `pnpm db:migrate` / `pnpm db:generate` | Apply / create Drizzle migrations                                             |
 | `pnpm enqueue <type> '<json>'`         | Queue a job by hand, e.g. `pnpm enqueue ping`                                 |
