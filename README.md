@@ -114,6 +114,21 @@ npx playwright show-report   # or open playwright-report/index.html
 - Specs: `smoke` (title, nav, banner, localhost-only), `projects` (create from the form, URL
   validation), `plans` (empty state, disabled actions), `bugs` (empty state, API 404/400).
 
+## API tests and Postman
+
+The REST API (see [docs/api.md](docs/api.md)) is tested two ways:
+
+- **Playwright `request`**: `pnpm test:api` runs `tests/api/*.spec.ts` with no browser: status
+  codes, validation errors, 404/409, and a check that a stored password is never returned.
+- **Postman**: in Postman choose _Import_, select `postman/ai-qa.postman_collection.json` and
+  `postman/local.postman_environment.json`, pick the **AI QA local** environment, start the
+  dashboard (`pnpm dev`) and run the collection in order. Each request has test scripts
+  (`pm.response.code` plus one JSON field). The collection contains no secrets; `canaryPassword`
+  is a fake value used to prove the API never echoes passwords. Headless:
+  `npx newman run postman/ai-qa.postman_collection.json -e postman/local.postman_environment.json`.
+
+Both suites run against the test server's own database and never call Claude or Jira.
+
 ## Configuration
 
 All in the repo-root `.env` (see `.env.example`):
@@ -137,6 +152,7 @@ never sent to Claude. Steps refer to them as `{{loginEmail}}` / `{{loginPassword
 | `pnpm demo`                            | Migrate, seed example.com, discover, plan, run, analyze                       |
 | `pnpm test`                            | Engine unit tests (step grammar, planner, classifier)                         |
 | `pnpm test:e2e`                        | Playwright Test suite for the dashboard (HTML report in `playwright-report/`) |
+| `pnpm test:api`                        | API tests with Playwright `request` (no browser)                              |
 | `pnpm lint` / `pnpm typecheck`         | ESLint / TypeScript across the workspace                                      |
 | `pnpm db:migrate` / `pnpm db:generate` | Apply / create Drizzle migrations                                             |
 | `pnpm enqueue <type> '<json>'`         | Queue a job by hand, e.g. `pnpm enqueue ping`                                 |
