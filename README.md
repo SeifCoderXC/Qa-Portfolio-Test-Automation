@@ -31,7 +31,6 @@ API key everything runs offline on heuristics and rules.
 
 ## Who it is for
 
-- A portfolio project showing Playwright, TypeScript, API/SQL tests and CI in one repo.
 - Coursework on test method: plans, cases, expected vs actual, severity, evidence, triage.
 - A local prototype for trying AI-assisted planning and triage on your own staging app.
 
