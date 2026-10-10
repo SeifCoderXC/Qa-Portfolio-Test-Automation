@@ -3,7 +3,7 @@
 [![CI](https://github.com/SeifCoderXC/Qa-Portfolio-Test-Automation/actions/workflows/ci.yml/badge.svg)](https://github.com/SeifCoderXC/Qa-Portfolio-Test-Automation/actions/workflows/ci.yml)
 
 Local AI-assisted QA console: discover a URL, generate cases, run Playwright, attach evidence,
-optional Jira.
+optional Jira. Checks run in GitHub Actions.
 
 You give it a URL. It crawls same-origin pages, proposes test cases, and a person approves them.
 It runs the approved cases in Chromium, keeps a screenshot, video, console and network log for
